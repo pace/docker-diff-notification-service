@@ -7,4 +7,3 @@ RUN make
 RUN make install
 WORKDIR "/"
 ADD ci-git-diff-notification-service.rb .
-RUN ruby ci-git-diff-notification-service.rb
