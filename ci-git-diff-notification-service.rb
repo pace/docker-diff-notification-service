@@ -19,6 +19,8 @@ exit 1 unless ENV['DIFF_FILE'] || ENV['DIFF_MAIL']
 exit 1 unless ENV['CI_PROJECT_URL']
 
 hash_options = {}
+hash_options[:email] = {}
+hash_options[:file] = {}
 
 # Get email addresses
 ENV['DIFF_MAIL'].split(",").each_with_index do |mail,argindex|
