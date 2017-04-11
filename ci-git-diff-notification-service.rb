@@ -14,9 +14,9 @@ require 'net/smtp'
 #
 # Returns `exit 0` on success and `exit 1` with error message on failure.
 
-exit 0 unless ENV['SMTP_HOST'] || ENV['SMTP_PASS'] || ENV['SMTP_USER']
-exit 0 unless ENV['DIFF_FILE'] || ENV['DIFF_MAIL']
-exit 0 unless ENV['CI_PROJECT_URL']
+exit 1 unless ENV['SMTP_HOST'] || ENV['SMTP_PASS'] || ENV['SMTP_USER']
+exit 1 unless ENV['DIFF_FILE'] || ENV['DIFF_MAIL']
+exit 1 unless ENV['CI_PROJECT_URL']
 
 hash_options = {}
 
