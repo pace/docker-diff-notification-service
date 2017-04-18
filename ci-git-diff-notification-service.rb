@@ -1,4 +1,5 @@
 require 'net/smtp'
+require 'optparse'
 # Public: Get `git diff` for given files and send them by email as HTML
 #
 # Required environment variables
@@ -6,8 +7,6 @@ require 'net/smtp'
 # - SMTP_HOST     e.g. mail.example.com
 # - SMTP_USER     e.g. info@example.com
 # - SMTP_PASS     e.g. $%-Pa$$w0rd-TS1!
-# - DIFF_MAIL     e.g. to@example.com,recipient@example.com
-# - DIFF_FILE     e.g. folder/file.ext,.gitignore,in/repo.txt
 #
 # External dependencies
 # - "aha" (Ansi HTML Adapter) to work. https://github.com/theZiz/aha
@@ -15,27 +14,62 @@ require 'net/smtp'
 # Returns `exit 0` on success and `exit 1` with error message on failure.
 
 exit 1 unless ENV['SMTP_HOST'] || ENV['SMTP_PASS'] || ENV['SMTP_USER']
-exit 1 unless ENV['DIFF_FILE'] || ENV['DIFF_MAIL']
 exit 1 unless ENV['CI_PROJECT_URL']
 
+def git_diff(file)
+    if File.file?(file)
+      `git diff --color-words HEAD~1 HEAD #{file} | aha --no-header` 
+    else
+      ""
+    end
+end
+
 hash_options = {}
-hash_options[:email] = {}
-hash_options[:file] = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: check.rb [options]"
+  opts.on('-m [ARGS]', '--mail [ARGS]', "Email address - separated with colon (,)") do |v|
+    hash_options[:email] = {}
+    
+    exit 1 unless v
 
-# Get email addresses
-ENV['DIFF_MAIL'].split(",").each_with_index do |mail,argindex|
-  hash_options[:email][argindex] = mail
-end
+    v.split(',').each_with_index do |mail,argindex|
+      hash_options[:email][argindex] = mail
+    end
+  end
 
-# Get files
-ENV['DIFF_FILE'].split(",").each_with_index do |file,argindex|
-  hash_options[:file][argindex] = file
-end
+  opts.on('-f [ARGS]', '--file [ARGS]', "Path to file - separated with colon (,)") do |v|
+    hash_options[:file] = {}
+
+    exit 1 unless v
+
+    v.split(',').each_with_index do |file,argindex|
+      hash_options[:file][argindex] = file
+    end
+  end
+
+  opts.on('-h', '--help', 'Display this help') do 
+    puts opts
+    exit 0
+  end
+end.parse!
+
+exit 1 unless hash_options
 
 # Get `git` changes for files and write HTML w/o header
 git_diff_result = ""
-hash_options[:file].values.each do |file|
-  git_diff_result += `git diff --color-words HEAD~1 HEAD #{file} | aha --no-header`
+hash_options[:file].values.each do |entry|
+
+  if entry.include? "*"
+    Dir.glob(entry).each do |file|
+      git_diff_result += git_diff(file)
+    end
+  elsif File.directory?(entry)
+    Dir[entry+"/**/*"].each do |file|
+      git_diff_result += git_diff(file)
+    end
+  elsif File.file?(entry)
+    git_diff_result += git_diff(entry)
+  end
 end
 
 exit 0 if git_diff_result.empty?

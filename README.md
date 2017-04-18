@@ -1,6 +1,12 @@
 # GIT Diff Notification Service for GitLab
 
-Notifies on changes for given git repository files with git-diff to given email adresses as HTML email.
+Notifies on changes for given git repository files or folders with git-diff to given email adresses as HTML email.
+
+## Features
+
+- Supports multiple files
+- Supports multiple folders
+- Support for wildcards in filenames or folders
 
 ## Getting Started
 
@@ -13,8 +19,6 @@ Switch to your GitLab project settings and add these variables to the **Secret V
  - SMTP_HOST = `smtp.example.com`
  - SMTP_USER = `me@example.com`
  - SMTP_PASS = `Pa$$w0rd`
- - DIFF_MAIL = `someone@example.com,anybody@example.com`
- - DIFF_FILE = `file/to/watch.txt,.gitignore,otherfile/to.watch`
 
 #### Example
 
@@ -25,11 +29,12 @@ Now, add this snippet to your repositories `.gitlab-ci.yml` file as another task
 ```
 diff_notification:
   stage: build
-  image: pacecar/docker-diff-notification-service:latest
+  image: pacecar/docker-diff-notification-service:0.2
   only:
     - master
   script:
-    - ruby /ci-git-diff-notification-service.rb
+    - ruby /ci-git-diff-notification-service.rb -f db/schema.rb,docs/api* -m me@example.com,them@example.com
+    - ruby /ci-git-diff-notification-service.rb -f core/file.py -m alert@example.com
 ```
 
 ## Screenshot
